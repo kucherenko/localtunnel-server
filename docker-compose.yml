@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - CF_API_TOKEN=${CF_API_TOKEN}
+    volumes:
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/acme.json:/acme.json
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  localtunnel:
+    build:
+      context: .
+      # Only include if your Dockerfile is elsewhere or has a custom name:
+      # dockerfile: path/to/Dockerfile
+    image: localtunnel-server:latest
+    container_name: localtunnel
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.localtunnel.entrypoints=websecure"
+      - "traefik.http.routers.localtunnel.rule=HostRegexp(`{subdomain:[a-z0-9-]+}.chara-ai.dev`)"
+      - "traefik.http.routers.localtunnel.tls=true"
+      - "traefik.http.routers.localtunnel.tls.certresolver=myresolver"
+      - "traefik.http.services.localtunnel.loadbalancer.server.port=3000"
