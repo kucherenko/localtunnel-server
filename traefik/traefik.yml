@@ -1,0 +1,13 @@
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+
+certificatesResolvers:
+  myresolver:
+    acme:
+      email: "kucherenko.andrey@gmail.com" # Required for Let’s Encrypt registration
+      storage: "acme.json" # Persist certs to avoid rate limits
+      httpChallenge: # Choose one challenge:
+        entryPoint: "web" # HTTP-01 on port 80
