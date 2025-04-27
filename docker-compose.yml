@@ -6,43 +6,32 @@ services:
     container_name: traefik
     restart: unless-stopped
     command:
-      # Enable Docker provider (only containers with labels are exposed)
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
-      # Define entrypoints for HTTP and HTTPS
-      - "--entryPoints.web.address=:80"
-      - "--entryPoints.websecure.address=:443"
-      # ACME / Let's Encrypt HTTP-01 Challenge
-      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
-      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.myresolver.acme.email=kucherenko.andrey@gmail.com"
-      - "--certificatesresolvers.myresolver.acme.storage=/traefik/acme.json"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - "./traefik:/traefik" # Persist ACME storage
-      - "/var/run/docker.sock:/var/run/docker.sock:ro" # Enable Docker provider :contentReference[oaicite:3]{index=3}
+      - "./traefik/dynamic:/etc/traefik/dynamic:ro"
+      - "./certs:/certs:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
 
   localtunnel:
     build:
-      context: . # Build from your local forked repo :contentReference[oaicite:4]{index=4}
-      # dockerfile: path/to/Dockerfile                       # Uncomment if nonstandard location
+      context: . # Build your forked LocalTunnel server
     image: localtunnel-server:latest
     container_name: localtunnel
     restart: unless-stopped
     env_file:
-      - ./.env # Should contain DOMAIN=chara-ai.dev
+      - ./.env # Contains DOMAIN=chara-ai.dev
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.localtunnel.entrypoints=websecure"
       - "traefik.http.routers.localtunnel.rule=HostRegexp(`{subdomain:[a-z0-9-]+}.chara-ai.dev`)"
       - "traefik.http.routers.localtunnel.tls=true"
-      - "traefik.http.routers.localtunnel.tls.certresolver=myresolver"
-      - "traefik.http.services.localtunnel.loadbalancer.server.port=3000" # :contentReference[oaicite:6]{index=6}
-      # Root domain configuration
-      - "traefik.http.routers.localtunnel-root.entrypoints=websecure"
-      - "traefik.http.routers.localtunnel-root.rule=Host(`chara-ai.dev`)"
-      - "traefik.http.routers.localtunnel-root.tls=true"
-      - "traefik.http.routers.localtunnel-root.tls.certresolver=myresolver"
-      - "traefik.http.services.localtunnel-root.loadbalancer.server.port=3000"
+      # No certresolver needed: uses File Provider certs
+      - "traefik.http.services.localtunnel.loadbalancer.server.port=3000"
