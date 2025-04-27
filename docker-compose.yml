@@ -32,10 +32,6 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.localtunnel.entrypoints=websecure"
       - "traefik.http.routers.localtunnel.rule=HostRegexp(`{subdomain:[a-z0-9-]+}.chara-ai.dev`)"
+      - "traefik.http.routers.localtunnel.rule=Host(`chara-ai.dev`)"
       - "traefik.http.routers.localtunnel.tls=true"
       - "traefik.http.services.localtunnel.loadbalancer.server.port=3000"
-      # The root router
-      - "traefik.http.routers.localtunnel-root.entrypoints=websecure"
-      - "traefik.http.routers.localtunnel-root.rule=Host(`chara-ai.dev`)"
-      - "traefik.http.routers.localtunnel-root.tls=true"
-      - "traefik.http.services.localtunnel-root.loadbalancer.server.port=3000"
